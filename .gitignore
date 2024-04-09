@@ -1,0 +1,17 @@
+# Ignore Excel files
+*.xls
+*.xlsx
+
+# Ignore HTML files
+*.html
+
+# Ignore exports folder
+exports/
+
+# Ignore virtual environment folders
+venv/
+env/
+.virtualenv/
+
+# Ignore .env files
+.env
