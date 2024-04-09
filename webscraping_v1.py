@@ -1,26 +1,62 @@
 import os
-import argparse
 import requests
 import pandas as pd
-from pathlib import Path
+from datetime import date
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from urllib.parse import unquote
 
 load_dotenv()
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument("path")
-# args = parser.parse_args()
-
-# target_dir = Path(args.path)
-
-# if not target_dir.exists():
-#     print("The target directory doesn't exists.")
-#     print("")
-
 login_url = 'https://majestic-marble.moraware.net/sys/'
-data_url = 'https://majestic-marble.moraware.net/sys/calendar?&view=123&daycount=4&refreshrate=5&display=3&activitytype=22,23,57&expand=8?16&wrap=1&filters=2|3:1:28:1:5608;0&text=JN1,JA23,JA24,JA25,JA26,AT4&effdate=2024-04-08'
-data_parameters = '/sys/calendar?&view=123&daycount=365&refreshrate=4&display=3&activitytype=22,23,57&expand=8?16&wrap=1&filters=2|3:1:28:1:5608;0&text=JN1,JA23,JA24,JA25,JA26,AT4&effdate=2024-04-08'
+global data_url
+global data_parameters
+global date_range
+global day_count
+
+data_parameters = '/sys/calendar'
+date_range = date.today()
+day_count = 30
+
+
+def get_input_range():
+    while True:
+        print('YYYY-MM-DD Ex. 2023-10-07')
+        date_range_input = input('Date Range [Empty for today]: ')
+        if len(date_range_input) == 10:
+            print(f'The range selected was: {date_range_input}')
+            return date_range_input
+        if (date_range_input == ""):
+            print(f'Default date range will be used {date_range}')
+            return date_range
+        else:
+            print('Invalid date range.')
+            print('Please make sure it follows the specified format.')
+
+def get_day_count():
+    while True:
+        day_count_input = input('Day Count [Default 30]: ')
+        if day_count_input.isnumeric:
+            print(f'The day count selected was: {day_count_input}')
+            return day_count_input
+        if (day_count_input == ""):
+            print(f'Default day count will be used 30')
+            return day_count
+        else:
+            print('Invalid day count.')
+            print('Please make sure it follows the specified format.')
+
+
+
+print('Welcome to the webscraper app developed by Kevin Arriaga')
+print('Please, type the date from which you wish to start the data extraction. (Leave empty for today`s date)')
+
+date_range = get_input_range()
+day_count = get_day_count()
+
+print(f'[USER={os.getenv("MORAWARE_USERNAME")}]')
+print(f'[PASS={os.getenv("MORAWARE_PASSWORD")}]')
+print('Attempting to stablish connection to Moraware Servers with credentials.\n')
 
 session = requests.Session()
 
@@ -31,11 +67,8 @@ payload = {
     'LOGIN': 'Sign in'
 }
 
-print(f'[USER={os.getenv("MORAWARE_USERNAME")}]')
-print(f'[PASS={os.getenv("MORAWARE_PASSWORD")}]')
-print('Attempting to stablish connection to Moraware Servers with credentials.\n')
-
 login_response = session.post(login_url, data=payload)
+data_url = f'https://majestic-marble.moraware.net/sys/calendar?&view=123&daycount={day_count}&refreshrate=5&display=3&activitytype=22,23,57&expand=8?16&wrap=1&filters=2|3:1:28:1:5608;0&text=JN1,JA23,JA24,JA25,JA26,AT4&effdate={date_range}'
 
 if login_response.status_code == 200:
     print(f'Successful connection - {login_response}\n')
@@ -63,7 +96,7 @@ if login_response.status_code == 200:
 
         # Iterate over each <td> tag and extract text from <span> elements
         for td in td_tags:
-            job_name = td.get('jobname')  # Get jobName attribute
+            job_name = unquote(td.get('jobname'))  # Get jobName attribute
             job_date = td.get('dragdate') # Get dragdate attribute
             if job_name:
                 # print("Job: ", job_name, " [", job_date, "]")
