@@ -6,6 +6,17 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from urllib.parse import unquote
 
+# from tkinter import *
+# from tkinter import ttk
+
+# Potential graphic interface with Tkinter in the future.
+# root = Tk()
+# frm = ttk.Frame(root, padding=200)
+# frm.grid()
+# ttk.Label(frm, text="Hello World!").grid(column=0, row=0)
+# ttk.Button(frm, text="Quit", command=root.destroy).grid(column=1, row=0)
+# root.mainloop()
+
 load_dotenv()
 
 login_url = 'https://majestic-marble.moraware.net/sys/'
@@ -46,7 +57,16 @@ def get_day_count():
             print('Invalid day count.')
             print('Please make sure it follows the specified format.')
 
-
+def generate_excel_file_path(folder_path, date_range, day_count):
+    base_filename = f"moraware_data_{date_range}_{day_count}.xlsx"
+    filename, file_extension = os.path.splitext(base_filename)
+    file_path = os.path.join(folder_path, base_filename)
+    counter = 1
+    while os.path.exists(file_path):
+        new_filename = f"{filename}_{counter}{file_extension}"
+        file_path = os.path.join(folder_path, new_filename)
+        counter += 1
+    return file_path
 
 print('Welcome to the webscraper app developed by Kevin Arriaga')
 print('Please, type the date from which you wish to start the data extraction. (Leave empty for today`s date)')
@@ -60,6 +80,7 @@ print('Attempting to stablish connection to Moraware Servers with credentials.\n
 
 session = requests.Session()
 
+# Make sure to create a .env with the following variables of user and password for this to work.
 payload = {
     'user': os.getenv("MORAWARE_USERNAME"),
     'pwd': os.getenv("MORAWARE_PASSWORD"),
@@ -68,7 +89,11 @@ payload = {
 }
 
 login_response = session.post(login_url, data=payload)
-data_url = f'https://majestic-marble.moraware.net/sys/calendar?&view=123&daycount={day_count}&refreshrate=5&display=3&activitytype=22,23,57&expand=8?16&wrap=1&filters=2|3:1:28:1:5608;0&text=JN1,JA23,JA24,JA25,JA26,AT4&effdate={date_range}'
+
+# data_url = f'https://majestic-marble.moraware.net/sys/calendar?&view=123&daycount={day_count}&refreshrate=5&display=3&activitytype=22,23,57&expand=8?16&wrap=1&filters=2|3:1:28:1:5608;0&text=JN1,JA23,JA24,JA25,JA26,AT4&effdate={date_range}'
+# url for checking data in browser
+# data_url = f'https://majestic-marble.moraware.net/sys/calendar?&view=0&activityType=15,19,59&assigneeId=&effdate=2024-04-15&dayCount=5&display=3&text=JN1,JA23,JA24,JA25,JA26&wrap=1&color=0&total=&expand=8%3F16&refreshRate=5&filters=2|3:1:28:1:5608;0&mrv=184'
+data_url = f'https://majestic-marble.moraware.net/sys/calendar?&view=0&activityType=15,19,59&assigneeId=&effdate={date_range}&dayCount={day_count}&display=3&text=JN1,JA23,JA24,JA25,JA26&wrap=1&color=0&total=&expand=8%3F16&refreshRate=5&filters=2|3:1:28:1:5608;0&mrv=184'
 
 if login_response.status_code == 200:
     print(f'Successful connection - {login_response}\n')
@@ -97,29 +122,61 @@ if login_response.status_code == 200:
         # Iterate over each <td> tag and extract text from <span> elements
         for td in td_tags:
             job_name = unquote(td.get('jobname'))  # Get jobName attribute
-            job_date = td.get('dragdate') # Get dragdate attribute
+            job_date = td.get('dragdate')  # Get dragdate attribute
+            note = ''
             if job_name:
-                # print("Job: ", job_name, " [", job_date, "]")
-                span_tags = td.find_all('span') # The span is what contains all the data from the slabs that we want to get
+                # Filter out <span> elements with 'data-mwtooltip' attribute
+                span_tags = [span for span in td.find_all('span') if not span.has_attr('data-mwtooltip')]
 
                 # Skip the first instance of <span>
-                for span in span_tags[1:]: # We ignore the first result from the span tag, which contains in this view case the same name of the job
-                    span_text = span.get_text(strip=True) # strip=True it removes any leading and trailing whitespace characters from the extracted text.
-                    data.append([job_name, job_date, span_text])
+                for span in span_tags[1:]:  # We ignore the first result from the span tag, which contains in this view case the same name of the job
+                    span_text = span.get_text(strip=True)  # strip=True it removes any leading and trailing whitespace characters from the extracted text.
+                    quantity = 1
 
+                    # If the span text contains a hyphen followed by a number, split the text
+                    if '-' in span_text:
+                        material, qty_info = span_text.split('-', 1)
+
+                        # Check if qty_info is not empty
+                        if qty_info:
+                            # If the next character after the number is numeric, extract the quantity
+                            if qty_info[0].isdigit():
+                                quantity = int(qty_info[0])
+                                index = 1
+
+                                # Check for consecutive digits to determine the complete quantity
+                                while index < len(qty_info) and qty_info[index].isdigit():
+                                    quantity = quantity * 10 + int(qty_info[index])
+                                    index += 1
+
+                        # Checking for bigger quantities is basically useless in the code above since I can't control
+                        # how data is entered, so anything bigger than 10 at the end of the day will get set to 1 and a
+                        # note will be added.
+                        # Maybe I'll optimize this in the future so that runtime is shortened significantly
+                        if (quantity > 10):
+                            quantity = 1
+                            note = 'The count exceds 10 and should be looked at.'
+
+                        # Append the entry with the calculated quantity
+                        data.extend([[job_name, job_date, span_text, span, quantity, note]] * quantity)
+                    else:
+                        # If no hyphen followed by a number is found, consider it as a single material
+                        data.append([job_name, job_date, span_text.strip(), span, quantity, note])
+
+        # Flavour context messages of the first 6 data entries for the user in cli
         for x in range(0, 6):
             print(f'Job: {data[x][0]} [{data[x][1]}] - {data[x][2]}') #[0][0] = Job Name, [0][1] = Job Date, [0][2] = Job Material
         if data[7]:
             print('...')
 
         # Create a DataFrame from the collected data
-        df = pd.DataFrame(data, columns=['Job Name', 'Date', 'Span Text'])
-        excel_file_path = os.path.join(folder_path, "moraware_data.xlsx")
-        print(f'\nCreating moraware_data.xlsx in {excel_file_path}...')
+        df = pd.DataFrame(data, columns=['Job Name', 'Date', 'Span Text', 'Span', 'Quantity', 'Note'])
+        excel_file_path = generate_excel_file_path(folder_path, date_range, day_count)
+        print(f'Creating {excel_file_path}...')
 
         # Save the DataFrame to an Excel file
         df.to_excel(excel_file_path, index=False)
-        print(f'Creating moraware_data.xlsx in successfully. \n')
+        print(f'Created {excel_file_path} successfully. \n')
 
     else:
         print("Data request failed. Status code:", data_response.status_code)
