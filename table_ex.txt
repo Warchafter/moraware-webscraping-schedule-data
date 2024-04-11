@@ -1,0 +1,31 @@
+table_from_html                                                Monday                                            Tuesday  ...   Saturday     Sunday
+0                                4/8/2024 (5.5 hours)                               4/9/2024 (4.5 hours)  ...  4/13/2024  4/14/2024
+1                    RYAN_68 BNL LUNA PEARL - 2 FROST      Snow_Lloyd Pompeii White Mountain-4 Jumbo 3cm  ...        NaN        NaN
+2                      RYAN_71 BNL LUNA PEARL-2 FROST          AK_Kroph Pompeii Valley White-2 Jumbo 3cm  ...        NaN        NaN
+3       Ryan_366 ENH MSI carrara marmi 3cm -2 Frost-1  LGI_163 GUM (C) Giallo Ornamental Light-2 Fros...  ...        NaN        NaN
+4                  RYAN_352 ENH WHITE SPARKLE-2 FROST  LGI_162 GUM (C) Giallo Ornamental Light-2 Fros...  ...        NaN        NaN
+5                Marro, Tony (VT) Monet Gold # 472987  LGI_161 GUM (C) Giallo Ornamental Light-2 Fros...  ...        NaN        NaN
+6                       AH4R_20 WWH Grey Expo 1.6cm-2               RYAN_601 AST CARRARA MARMI - 2 FROST  ...        NaN        NaN
+7                       AH4R_21 WWH Grey Expo 1.6cm-2                   RYAN_13 HRS LUNA PEARL - 2 FROST  ...        NaN        NaN
+8                       AH4R_23 WWH Grey Expo 1.6cm-2                    RYAN_4 HRS LUNA PEARL - 2 FROST  ...        NaN        NaN
+9                       AH4R_24 WWH Grey Expo 1.6cm-2          JDC_95W Bonura-Summer Kitchen White Lux-1  ...        NaN        NaN
+10                      AH4R_22 WWH Grey Expo 1.6cm-2                                                NaN  ...        NaN        NaN
+11                      AH4R_24 WWH Grey Expo 1.6cm-2                                                NaN  ...        NaN        NaN
+12                                             Monday                                            Tuesday  ...   Saturday     Sunday
+13  View:Customized Activity Type:Saw Cut, R Saw C...                                                NaN  ...        NaN        NaN
+14   Monday, April 08, 2024 Monday, 4/8/2024 - S...                                                NaN  ...        NaN        NaN
+
+[15 rows x 7 columns]table_from_html                                                 Monday                                      Tuesday  ...  Saturday    Sunday
+0                                             1/1/2024                         1/2/2024 (3.5 hours)  ...  1/6/2024  1/7/2024
+1                                                  NaN  LGI_4 TYP Giallo Ornamental Light-2 Frost-1  ...       NaN       NaN
+2                                                  NaN  LGI_3 TYP Giallo Ornamental Light-2 Frost-1  ...       NaN       NaN
+3                                                  NaN  LGI_2 TYP Giallo Ornamental Light-2 Frost-1  ...       NaN       NaN
+4                                                  NaN            RYAN_133 LWP LUNA PEARL - 2 FROST  ...       NaN       NaN
+..                                                 ...                                          ...  ...       ...       ...
+144  Snow_Nazario Giallo Ornamental White-3 (White ...               Davis_A306 VOG Q1 Simply White  ...       NaN       NaN
+145                                                NaN        ABD_1 HMG-Waterfall Cambria Dunmore 4  ...       NaN       NaN
+146                                             Monday                                      Tuesday  ...  Saturday    Sunday
+147  View:Customized Activity Type:Saw Cut, R Saw C...                                          NaN  ...       NaN       NaN
+148   Monday, January 01, 2024 Monday, 1/1/2024 -...                                          NaN  ...       NaN       NaN
+
+[149 rows x 7 columns]

@@ -2,9 +2,13 @@ import os
 import requests
 import pandas as pd
 from datetime import date
+from datetime import datetime
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from urllib.parse import unquote
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 # from tkinter import *
 # from tkinter import ttk
@@ -68,6 +72,77 @@ def generate_excel_file_path(folder_path, date_range, day_count):
         counter += 1
     return file_path
 
+def plot_data_week(data):
+    # Get unique years in the data
+    unique_years = data['Year'].unique()
+
+    # Get the maximum number of weeks across all years
+    max_weeks = max(data['Week'])
+
+    # Initialize an array to store the sum of quantities for each week
+    total_quantities_by_year = []
+
+    # Calculate total quantities for each year
+    for year in unique_years:
+        # Filter data for the current year
+        year_data = data[data['Year'] == year]
+        
+        # Initialize an array to store the sum of quantities for each week in the current year
+        total_quantities = np.zeros(max_weeks)
+
+        # Sum quantities for each week in the current year
+        for week, group in year_data.groupby('Week'):
+            total_quantities[week - 1] = group['Quantity'].sum()  # Week index starts from 1
+
+        total_quantities_by_year.append(total_quantities)
+
+    # Plot data for each year
+    for i, year_data in enumerate(total_quantities_by_year):
+        plt.plot(np.arange(1, max_weeks + 1), year_data, label=f'Year {unique_years[i]}')
+
+    plt.xlabel('Week')
+    plt.ylabel('Total Quantity')
+    plt.title('Total Quantity vs Week')
+    plt.xticks(np.arange(1, max_weeks + 1))  # Set x-ticks to display weeks
+    plt.legend()
+    plt.show()
+
+def plot_data_by_month(data):
+    # Get unique years in the data
+    unique_years = data['Year'].unique()
+
+    # Get the maximum number of months across all years
+    max_months = max(data['Month'])
+
+    # Initialize an array to store the sum of quantities for each month
+    total_quantities_by_year = []
+
+    # Calculate total quantities for each year
+    for year in unique_years:
+        # Filter data for the current year
+        year_data = data[data['Year'] == year]
+        
+        # Initialize an array to store the sum of quantities for each month in the current year
+        total_quantities = np.zeros(max_months)
+
+        # Sum quantities for each month in the current year
+        for month, group in year_data.groupby('Month'):
+            total_quantities[month - 1] = group['Quantity'].sum()  # Month index starts from 1
+
+        total_quantities_by_year.append(total_quantities)
+
+    # Plot data for each year
+    for i, year_data in enumerate(total_quantities_by_year):
+        plt.plot(np.arange(1, max_months + 1), year_data, label=f'Year {unique_years[i]}')
+
+    plt.xlabel('Month')
+    plt.ylabel('Total Quantity')
+    plt.title('Total Quantity vs Month')
+    plt.xticks(np.arange(1, max_months + 1))  # Set x-ticks to display months
+    plt.legend()
+    plt.show()
+
+
 print('Welcome to the webscraper app developed by Kevin Arriaga')
 print('Please, type the date from which you wish to start the data extraction. (Leave empty for today`s date)')
 
@@ -112,7 +187,7 @@ if login_response.status_code == 200:
         print(f'Creating moraware_html.html in {html_file_path}...')
         with open(html_file_path, "a", encoding="utf-8") as f:
             f.write(html)
-            print(f'Created moraware_html.html in successfully. \n')
+            print(f'Created moraware_html.html successfully. \n')
 
         # Find all <td> tags within the <tr> tag
         td_tags = soup.find_all('td', class_="calendarItem")
@@ -122,7 +197,20 @@ if login_response.status_code == 200:
         # Iterate over each <td> tag and extract text from <span> elements
         for td in td_tags:
             job_name = unquote(td.get('jobname'))  # Get jobName attribute
+            # Replace the line where job_date is obtained with the actual value from the HTML
             job_date = td.get('dragdate')  # Get dragdate attribute
+
+            # Convert job_date string to datetime object
+            date_obj = datetime.strptime(job_date, "%m/%d/%Y")
+
+            # Extract day, month, and year
+            day = date_obj.day
+            month = date_obj.month
+            year = date_obj.year
+
+            # Calculate week number
+            week_number = date_obj.isocalendar()[1]
+
             note = ''
             if job_name:
                 # Filter out <span> elements with 'data-mwtooltip' attribute
@@ -158,10 +246,10 @@ if login_response.status_code == 200:
                             note = 'The count exceds 10 and should be looked at.'
 
                         # Append the entry with the calculated quantity
-                        data.extend([[job_name, job_date, span_text, span, quantity, note]] * quantity)
+                        data.extend([[job_name, date_obj, day, month, year, week_number, material, span, quantity, note]])
                     else:
                         # If no hyphen followed by a number is found, consider it as a single material
-                        data.append([job_name, job_date, span_text.strip(), span, quantity, note])
+                        data.append([job_name, date_obj, day, month, year, week_number, material.strip(), span, quantity, note])
 
         # Flavour context messages of the first 6 data entries for the user in cli
         for x in range(0, 6):
@@ -170,13 +258,17 @@ if login_response.status_code == 200:
             print('...')
 
         # Create a DataFrame from the collected data
-        df = pd.DataFrame(data, columns=['Job Name', 'Date', 'Span Text', 'Span', 'Quantity', 'Note'])
-        excel_file_path = generate_excel_file_path(folder_path, date_range, day_count)
-        print(f'Creating {excel_file_path}...')
+        df = pd.DataFrame(data, columns=['Job Name', 'Date', 'Day', 'Month', 'Year', 'Week', 'Material', 'Span', 'Quantity', 'Note'])
+        # excel_file_path = generate_excel_file_path(folder_path, date_range, day_count)
+        # print(f'Creating {excel_file_path}...')
 
-        # Save the DataFrame to an Excel file
-        df.to_excel(excel_file_path, index=False)
-        print(f'Created {excel_file_path} successfully. \n')
+        # # Save the DataFrame to an Excel file
+        # df.to_excel(excel_file_path, index=False)
+        # print(f'Created {excel_file_path} successfully. \n')
+
+
+        plot_data_week(df)
+        plot_data_by_month(df)
 
     else:
         print("Data request failed. Status code:", data_response.status_code)
